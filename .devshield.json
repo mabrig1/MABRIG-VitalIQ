@@ -1,0 +1,9 @@
+{
+  "policy": "strict",
+  "scanScope": "repository",
+  "agenticMode": "plan",
+  "dependencyAgenticMode": "auto",
+  "securityGraphMode": "on",
+  "controlPlaneMode": "on",
+  "baselineMode": "off"
+}
