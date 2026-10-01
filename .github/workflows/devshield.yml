@@ -1,0 +1,48 @@
+name: DevShield Security Review
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+  security-events: write
+
+jobs:
+  devshield:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Full repository security review
+        id: devshield
+        uses: mabrig1/mabrig-devshield-ai@v1
+        with:
+          github-token: ${{ github.token }}
+          scan-scope: repository
+          policy: strict
+          fail-on: high
+          comment: false
+          agentic-mode: plan
+          dependency-agentic: auto
+          security-graph: on
+          control-plane: on
+
+      - name: Security review summary
+        if: always()
+        run: |
+          {
+            echo "### MABRIG DevShield"
+            echo "- Findings: ${{ steps.devshield.outputs.findings-count }}"
+            echo "- New findings: ${{ steps.devshield.outputs.new-findings }}"
+            echo "- Risk: ${{ steps.devshield.outputs.risk-level }} (${{ steps.devshield.outputs.risk-score }}/100)"
+            echo "- Scanned files: ${{ steps.devshield.outputs.scanned-files }}"
+            echo "- Agentic state: ${{ steps.devshield.outputs.agentic-state }}"
+            echo "- Security graph: ${{ steps.devshield.outputs.security-graph-state }}"
+          } >> "$GITHUB_STEP_SUMMARY"
