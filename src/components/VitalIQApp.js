@@ -16,6 +16,17 @@ const demoReadings = [
 
 const labels = { glucose: "Blood glucose", bp: "Blood pressure", pulse: "Pulse", spo2: "Blood oxygen" };
 const units = { glucose: "mg/dL", bp: "mmHg", pulse: "bpm", spo2: "%" };
+const safeRanges = {
+  glucose: { min: 20, max: 600, label: "20–600 mg/dL" },
+  pulse: { min: 20, max: 250, label: "20–250 bpm" },
+  spo2: { min: 50, max: 100, label: "50–100%" },
+  systolic: { min: 50, max: 260, label: "50–260 mmHg" },
+  diastolic: { min: 30, max: 180, label: "30–180 mmHg" }
+};
+
+function inRange(value, range) {
+  return Number.isFinite(value) && value >= range.min && value <= range.max;
+}
 
 function latestOf(readings, type) {
   return readings.filter((r) => r.type === type).sort((a, b) => new Date(b.time) - new Date(a.time))[0];
@@ -98,15 +109,15 @@ export default function VitalIQApp() {
     if (form.type === "bp") {
       const systolic = Number(form.systolic);
       const diastolic = Number(form.diastolic);
-      if (!systolic || !diastolic) {
-        setNotice("Enter both systolic and diastolic values.");
+      if (!inRange(systolic, safeRanges.systolic) || !inRange(diastolic, safeRanges.diastolic) || systolic <= diastolic) {
+        setNotice("Check the blood-pressure reading. Enter a plausible systolic/diastolic pair from the measurement device.");
         return;
       }
       next = { ...base, systolic, diastolic };
     } else {
       const value = Number(form.value);
-      if (!value) {
-        setNotice("Enter a reading value.");
+      if (!inRange(value, safeRanges[form.type])) {
+        setNotice("Check this reading. Expected input range: " + safeRanges[form.type].label + ".");
         return;
       }
       next = { ...base, value };
@@ -155,6 +166,7 @@ export default function VitalIQApp() {
         <div>
           <span className="eyebrow">PERSONAL HEALTH INTELLIGENCE</span>
           <h1>Your health data,<br />finally understandable.</h1>
+          <span className="verified">DEMO MODE · SAMPLE READINGS</span>
           <p>Bring verified readings into one calm dashboard, see trends, and create a clear summary you can share with a clinician.</p>
           <div className="hero-actions">
             <button className="primary" onClick={() => setShowForm(true)}>Add your first reading</button>
@@ -291,7 +303,7 @@ export default function VitalIQApp() {
               </select>
             </label>
 
-            <div className="form-note">Record a value only after obtaining it from an appropriate measurement source.</div>
+            <div className="form-note">Record a value only after obtaining it from an appropriate measurement source. VitalIQ checks for plausible input ranges, but that check does not determine whether a reading is medically safe or diagnose a condition.</div>
             <button className="primary full" type="submit">Save reading</button>
           </form>
         </div>
